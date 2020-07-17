@@ -35,12 +35,22 @@ module "ecs_fargate" {
   public_subnets_ids           = var.public_subnets_ids
   private_subnets_ids          = var.private_subnets_ids
   container_name               = "${var.name_preffix}-sonar"
-  container_image              = "cnservices/sonarqube"
+  container_image              = "sonarqube"
   container_cpu                = 4096
   container_memory             = 8192
   container_memory_reservation = 4096
-  lb_http_ports                = [ 9000, 9001 ]
+  lb_http_ports                = [9000, 9001]
   lb_https_ports               = []
+  command = [
+    "-Dsonar.search.javaAdditionalOpts=-Dnode.store.allow_mmapfs=false"
+  ]
+  ulimits = [
+    {
+      "name" : "nofile",
+      "softLimit" : 65535,
+      "hardLimit" : 65535
+    }
+  ]
   port_mappings = [
     {
       containerPort = 9000
@@ -64,7 +74,7 @@ module "ecs_fargate" {
     },
     {
       name  = "SONAR_JDBC_URL"
-      value = "jdbc:postgresql://${aws_rds_cluster.aurora_db.endpoint}/${local.sonar_db_name}"
+      value = "jdbc:postgresql://${aws_db_instance.this.endpoint}/${local.sonar_db_name}"
     },
   ]
   log_configuration = {
